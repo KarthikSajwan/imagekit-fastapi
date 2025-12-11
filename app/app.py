@@ -57,11 +57,27 @@ def upload_file(
             )
         )
 
-        if upload_result.response.http_status_code != 200:
-            raise HTTPException(status_code=500, detail="ImageKit upload failed")
+        # Debug - Keep this if needed:
+        # print("UPLOAD RESULT RAW:", upload_result.__dict__)
 
         # -----------------------------------------
-        # Determine file type (image or video)
+        # Check for ImageKit errors
+        # -----------------------------------------
+        if upload_result.error:
+            raise HTTPException(
+                status_code=500,
+                detail=upload_result.error.get("message", "ImageKit upload failed")
+            )
+
+        # -----------------------------------------
+        # Extract actual ImageKit response values
+        # -----------------------------------------
+        uploaded_url = upload_result.url
+        uploaded_name = upload_result.name
+        # uploaded_thumbnail = upload_result.thumbnail_url  # optional
+
+        # -----------------------------------------
+        # Determine file type
         # -----------------------------------------
         file_type = "video" if file.content_type.startswith("video/") else "image"
 
@@ -70,9 +86,9 @@ def upload_file(
         # -----------------------------------------
         post = models.Post(
             caption=caption,
-            url=upload_result.url,
+            url=uploaded_url,
             file_type=file_type,
-            file_name=upload_result.name,
+            file_name=uploaded_name,
         )
 
         db.add(post)
@@ -81,18 +97,26 @@ def upload_file(
 
         return {
             "message": "Upload successful",
-            "post": post
+            "post": {
+                "id": str(post.id),
+                "caption": post.caption,
+                "url": post.url,
+                "file_type": post.file_type,
+                "file_name": post.file_name,
+                "created_at": post.created_at.isoformat() if post.created_at else None
+            }
         }
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
     finally:
-        # Delete temporary file
+        # Cleanup temp file
         if temp_file_path and os.path.exists(temp_file_path):
             os.unlink(temp_file_path)
 
-        file.file.close()
+        if not file.file.closed:
+            file.file.close()
 
 
 # --------------------------------------------------------

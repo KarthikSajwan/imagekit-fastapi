@@ -1,21 +1,19 @@
+# Python
 __pycache__/
-*.py[cod]
-*.so
-*.pyd
-*.pyo
-*.pyd
-*$py.class
+*.pyc
 
 # Virtual environment
 venv/
-ENV/
-env/
-.venv/
+.env
 
-# VS Code settings
-.vscode/
+# Database
+*.db
 
-# Byte-compiled / optimized / DLL files
-*.pyc
-*.pyo
-*.pyd
+# OS
+.DS_Store
+
+# Streamlit
+.streamlit/
+
+# Logs
+*.log
